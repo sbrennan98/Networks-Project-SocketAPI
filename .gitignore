@@ -4,3 +4,5 @@
 out
 #We don't need to upload the compiled binaries
 *.class
+#Don't save changes to users file from testing in repo
+users.txt
