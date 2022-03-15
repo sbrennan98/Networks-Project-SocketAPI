@@ -1,0 +1,6 @@
+#IntelliJ IDEA folder & files
+.idea
+#IDE compiler output folder
+out
+#We don't need to upload the compiled binaries
+*.class
