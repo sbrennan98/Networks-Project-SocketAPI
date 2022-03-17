@@ -129,24 +129,33 @@ public class Server {
             Scanner scanner = new Scanner(file);
             while (scanner.hasNextLine()) { //O(n) for n user entries
                 String user = scanner.nextLine();
-                if (user.equals(userID)) { //Almost forgot .equals() method from 3330
-                    System.out.println(user + " already taken, please try again with another username.\n");
+                StringTokenizer tokenizer = new StringTokenizer(user.substring(1));
+                String username = tokenizer.nextToken(", ");
+                if (username.equals(userID)) { //Almost forgot .equals() method from 3330
+                    try{
+                        output = new DataOutputStream(socket.getOutputStream());
+                        output.writeUTF("Denied. User account already exists.");
+                    }
+                    catch(Exception e){
+                        System.out.println(e);
+                    }
                     return false;
                 }
+
             }
-            System.out.println("user " + userID + " not found. Creating user!\n");
+//            System.out.println("user " + userID + " not found. Creating user!\n");
             String entry = "\n(" + userID + ", " + pass + ")";
-            try{
-                //src: https://stackoverflow.com/questions/1625234/how-to-append-text-to-an-existing-file-in-java
-                Files.write(Paths.get("../users.txt"), entry.getBytes(), StandardOpenOption.APPEND);
-                //Send message to client that user was created
-            }
-            catch(Exception e){
-                System.out.println(e);
-            }
+            //src: https://stackoverflow.com/questions/1625234/how-to-append-text-to-an-existing-file-in-java
+            Files.write(Paths.get("../users.txt"), entry.getBytes(), StandardOpenOption.APPEND);
+            //Send message to client that user was created
+            output = new DataOutputStream(socket.getOutputStream());
+            output.writeUTF("New user account created. Please login.");
             return true;
         } catch (FileNotFoundException fnf) {
             System.out.println(fnf);
+            return false;
+        } catch(Exception e){
+            System.out.println(e);
             return false;
         }
     }

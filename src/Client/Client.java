@@ -13,36 +13,28 @@ import java.util.StringTokenizer; //https://docs.oracle.com/en/java/javase/17/do
 
 public class Client {
     private Socket socket;
-    private DataInputStream input;
+    private DataInputStream input; //For both user input and server input
     private DataOutputStream output;
     private boolean loggedIn = false;
+    private boolean kill = false;
 
     public Client(String address, int port){
         System.out.println("My chat room client. Version One.\n");
-
         try{
-            socket = new Socket(address, port);
-            input = new DataInputStream(System.in);
-            output = new DataOutputStream(socket.getOutputStream());
+            //socket = new Socket(address, port);
+            while(!kill) {
+                socket = new Socket(address, port);
+                input = new DataInputStream(System.in);
+                output = new DataOutputStream(socket.getOutputStream());
+                String command = input.readLine(); //deprecated method, consider changing implementation
+                parseInput(command);
+            }
         }
-        catch(Exception e){
+        catch(Exception e){ //Expand on catches if I have time
             System.out.println(e);
-            System.out.println("Could not connect to server; please ensure the ChatRoom Server is running & try again!");
+            System.out.println("Couldn't connect to server; ensure ChatRoom Server is running & try again!");
+            kill = true;
             System.exit(-1);
-        }
-
-        String command = "";
-        try{
-            command = input.readLine(); //Method deprecated, consider switching implementation
-            //if(parseInput(command) > 0){
-                //output.writeUTF(command); //Send command to the server
-            //}
-            parseInput(command);
-            //output.writeUTF("User entered bad input and died.");
-        }
-        catch(Exception e){
-            System.out.println("Error sending in client");
-            System.out.println(e);
         }
     }
 
@@ -150,8 +142,19 @@ public class Client {
         }
         if(userPassRequirements(userID, pass)){ //If input is good then send it off to server
             try{
+                //Send data from client over socket
                 output = new DataOutputStream(socket.getOutputStream());
                 output.writeUTF("newuser " + userID + " " + pass);
+                //Listen for server response over socket
+                input = new DataInputStream(socket.getInputStream()); //Need BufferedInputStream again?
+                String response = input.readUTF();
+                System.out.println(response);
+                if(response.equals("New user account created. Please login.")){
+                    return true;
+                }
+                else{
+                    return false;
+                }
             }
             catch(Exception e){
                 System.out.println(e);
