@@ -37,7 +37,6 @@ public class Server {
             //Waiting for client to connect over socket...
             while(!kill){
                 socket = serverSocket.accept();
-                System.out.println("Client connected!");
                 //BufferedInputStream to avoid EOFException src: https://stackoverflow.com/questions/17972172/eofexception-in-readutf
                 input = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
                 processInput();
@@ -52,7 +51,6 @@ public class Server {
         String command = "";
         try {
             command = input.readUTF();
-            System.out.println(command);
         } catch (Exception e) {
             System.out.println("Couldn't Process Input...");
             System.out.println(e);
@@ -60,33 +58,52 @@ public class Server {
         }
 
         StringTokenizer tokenizer = new StringTokenizer(command);
-        String function = tokenizer.nextToken();
+        String function = "";
+        if(tokenizer.hasMoreTokens()){
+            function = tokenizer.nextToken();
+        }
         switch (function) {
             case "login" -> login(tokenizer.nextToken(), tokenizer.nextToken());
             case "newuser" -> newUser(tokenizer.nextToken(), tokenizer.nextToken());
-            case "send" -> send(tokenizer.nextToken());
-            case "logout" -> logout();
+            case "send" -> send(tokenizer.nextToken("")); //src: https://stackoverflow.com/questions/33179270/returning-the-rest-of-the-string-with-stringtokenizer
+            case "logout" -> logout(tokenizer.nextToken());
             default -> {
                 System.out.println("Client sent wrong user input somehow...");
-                return -1;
+                return -2;
             }
         }
         return 1;
     }
 
-    private boolean logout() {
-        return true;
-//        return loggedInList.contains(userID) && loggedInList.remove(userID);
+    private boolean logout(String userID) {
+        try{
+            System.out.println("Logging out in server...");
+            output = new DataOutputStream(socket.getOutputStream());
+            output.writeUTF(userID + " left.");
+        }
+        catch(Exception e){
+            System.out.println(e);
+        }
+        return loggedInList.contains(userID) && loggedInList.remove(userID);
     }
 
     private boolean send(String message) {
-        System.out.println(message);
+        try{
+            output = new DataOutputStream(socket.getOutputStream());
+            if(!loggedInList.isEmpty()){
+                String user = loggedInList.get(0); //Okay for V1 with only one host, but how to design for V2???
+                output.writeUTF(user + ": " + message);
+            }
+        }
+        catch(Exception e){
+            System.out.println(e);
+        }
         return true;
     }
 
     public boolean close() {
         try {
-            System.out.println("Closing server...\n");
+            System.out.println("Closing server...");
             socket.close();
             input.close();
             return true;
@@ -97,7 +114,6 @@ public class Server {
     }
     private boolean login(String username, String password){
         String clientInput = "(" + username + ", " + password + ")"; //Form tuple-like format from input like given .txt
-        System.out.println("Looking for " + clientInput);
         try{
             File file = new File("../users.txt"); //src: https://docs.oracle.com/javase/8/docs/api/java/nio/file/Files.html
             Scanner scanner = new Scanner(file);
@@ -105,19 +121,26 @@ public class Server {
                 String user = scanner.nextLine();
                 if(user.equals(clientInput)){ //Almost forgot .equals() method from 3330
                     //Accept login & send confirmation message to client
-                    System.out.println("Logging in...\n");
+                    System.out.println(username + " login.");
                     //Implement real "login" here
                     //loggedIn = true;
                     loggedInList.add(username);
+                    output = new DataOutputStream(socket.getOutputStream());
+                    output.writeUTF("login confirmed");
                     return true;
                 }
             }
             //Decline login & send error message to client
-            System.out.println("Username or password is incorrect...");
+            output = new DataOutputStream(socket.getOutputStream());
+            output.writeUTF("Denied. Username or password is incorrect.");
             return false;
         }
         catch(FileNotFoundException fnf){
             System.out.println(fnf);
+            return false;
+        }
+        catch(Exception e){
+            System.out.println(e);
             return false;
         }
     }
@@ -141,12 +164,12 @@ public class Server {
                     }
                     return false;
                 }
-
             }
 //            System.out.println("user " + userID + " not found. Creating user!\n");
             String entry = "\n(" + userID + ", " + pass + ")";
             //src: https://stackoverflow.com/questions/1625234/how-to-append-text-to-an-existing-file-in-java
             Files.write(Paths.get("../users.txt"), entry.getBytes(), StandardOpenOption.APPEND);
+            System.out.println("New user account created.");
             //Send message to client that user was created
             output = new DataOutputStream(socket.getOutputStream());
             output.writeUTF("New user account created. Please login.");
