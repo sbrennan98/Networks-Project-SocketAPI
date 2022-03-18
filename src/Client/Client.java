@@ -11,16 +11,25 @@ import java.net.Socket; //https://docs.oracle.com/en/java/javase/17/docs/api/jav
 import java.util.Scanner; //https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/Scanner.html
 import java.util.StringTokenizer; //https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/StringTokenizer.html
 
-public class Client {
+public class Client extends Thread{
     private Socket socket;
     private DataInputStream input; //For both user input and server input
     private DataOutputStream output;
     //private boolean loggedIn = false; //Use user string instead so we can tell the server which User to log out...
     private String loggedIn = ""; //User string set when logged in
     private boolean kill = false;
+    private String address = "";
+    private int port;
 
     public Client(String address, int port){
         System.out.println("My chat room client. Version One.\n");
+
+        this.address = address;
+        this.port = port;
+        //this.start();
+    }
+
+    public void run(){
         try{
             //socket = new Socket(address, port);
             while(!kill) {

@@ -5,6 +5,7 @@
  * Description: Computer Networks class project using the Socket API in Java
  */
 package Server;
+import Client.Client;
 
 import java.io.*;
 import java.net.ServerSocket; //https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/net/ServerSocket.html
@@ -26,7 +27,9 @@ public class Server {
     //Global loggedIn state? Not scalable for V2
     //private boolean loggedIn = false;
     private List<String> loggedInList = new ArrayList<String>();
+    private List<Client> clients = new ArrayList<Client>();
     private boolean kill = false;
+    private static short MAXCLIENTS = 3;
 
     public Server(int port) {
         System.out.println("My chat room server. Version One.\n");
@@ -35,6 +38,12 @@ public class Server {
             //Waiting for client to connect over socket...
             while(!kill){
                 socket = serverSocket.accept();
+                if(clients.size() < MAXCLIENTS){
+                    Client newClient = new Client("127.0.0.1", 14291);
+                    clients.add(newClient);
+                    newClient.start();
+                }
+
                 //BufferedInputStream to avoid EOFException src: https://stackoverflow.com/questions/17972172/eofexception-in-readutf
                 input = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
                 processInput();
@@ -85,7 +94,7 @@ public class Server {
         return loggedInList.contains(userID) && loggedInList.remove(userID);
     }
 
-    private boolean send(String message) {
+    private boolean send(String message) { //Now for each user thread, send
         try{
             output = new DataOutputStream(socket.getOutputStream());
             if(!loggedInList.isEmpty()){

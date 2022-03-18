@@ -6,3 +6,5 @@ out
 *.class
 #Don't save changes to users file from testing in repo
 users.txt
+
+zips
