@@ -77,8 +77,8 @@ public class Server {
 
     private boolean logout(String userID) {
         try{
-            System.out.println("Logging out in server...");
             output = new DataOutputStream(socket.getOutputStream());
+            System.out.println(userID + " logout.");
             output.writeUTF(userID + " left.");
         }
         catch(Exception e){
@@ -92,7 +92,9 @@ public class Server {
             output = new DataOutputStream(socket.getOutputStream());
             if(!loggedInList.isEmpty()){
                 String user = loggedInList.get(0); //Okay for V1 with only one host, but how to design for V2???
-                output.writeUTF(user + ": " + message);
+                String serverMessage = user + ": " + message;
+                System.out.println(serverMessage);
+                output.writeUTF(serverMessage);
             }
         }
         catch(Exception e){
